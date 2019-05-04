@@ -19,6 +19,7 @@ type (
 	completionSignal <-chan bool
 )
 
+//GzJob is returned from Gzip() to enable non-blocking GzJob management.
 type GzJob struct {
 	R    rchunks
 	W    wchunks
@@ -26,6 +27,7 @@ type GzJob struct {
 	E    <-chan error
 }
 
+//Observe enables observation of a GzJob once it has began.
 func (j GzJob) Observe() {
 	var (
 		read, written int

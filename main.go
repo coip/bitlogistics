@@ -5,6 +5,7 @@ import (
 	"bitlogistics/crypto"
 	"bytes"
 	"log"
+	"runtime"
 )
 
 const fmtstr = "stage=%s => len(\n%q\n) == %d;\n"
@@ -31,6 +32,8 @@ var (
 )
 
 func main() {
+
+	runtime.GOMAXPROCS(1)
 
 	log.Printf(fmtstr, "unencrypted", str, len(str))
 

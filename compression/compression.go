@@ -19,14 +19,14 @@ type (
 	completionSignal <-chan bool
 )
 
-type CompressionJob struct {
+type GzJob struct {
 	R    rchunks
 	W    wchunks
 	Done completionSignal
 	E    <-chan error
 }
 
-func (c CompressionJob) Observe() {
+func (j GzJob) Observe() {
 	var (
 		read, written int
 		err           error
@@ -35,11 +35,11 @@ func (c CompressionJob) Observe() {
 	go func() {
 		for {
 			select {
-			case read = <-c.R:
+			case read = <-j.R:
 				log.Printf("read %d bytes", read)
-			case written = <-c.W:
+			case written = <-j.W:
 				log.Printf("written %d bytes", written)
-			case err = <-c.E:
+			case err = <-j.E:
 				if err != io.EOF {
 					log.Fatalf("error detected while observing compression: %+v", err)
 					return
@@ -47,7 +47,7 @@ func (c CompressionJob) Observe() {
 					log.Println("EOF reached!")
 					return
 				}
-			case success = <-c.Done:
+			case success = <-j.Done:
 				log.Printf("success: %t", success)
 			}
 		}
@@ -55,7 +55,7 @@ func (c CompressionJob) Observe() {
 }
 
 //Gzip the data stored in src into dst
-func Gzip(w io.Writer, r io.Reader) CompressionJob {
+func Gzip(w io.Writer, r io.Reader) GzJob {
 	var (
 		read, written int
 		e             error
@@ -96,7 +96,7 @@ func Gzip(w io.Writer, r io.Reader) CompressionJob {
 		}
 	}(rq, wq, signal, errorQueue)
 
-	return CompressionJob{rchunks(rq), wchunks(wq), completionSignal(signal), errorQueue}
+	return GzJob{rchunks(rq), wchunks(wq), completionSignal(signal), errorQueue}
 }
 
 //Gunzip the data stored in src into dst

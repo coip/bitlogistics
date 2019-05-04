@@ -1,4 +1,4 @@
-![go report card](https://goreportcard.com/badge/github.com/coip/bitlogistics)
+[![go report card](https://goreportcard.com/badge/github.com/coip/bitlogistics)](https://goreportcard.com/report/github.com/coip/bitlogistics)
 
 
 # run with `go run main.go`

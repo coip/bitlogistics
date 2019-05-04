@@ -34,7 +34,10 @@ func main() {
 
 	log.Printf(fmtstr, "unencrypted", str, len(str))
 
-	compression.Gzip(&gzippedbuf, bytes.NewBuffer([]byte(str)))
+	in := compression.Gzip(&gzippedbuf, bytes.NewBuffer([]byte(str)))
+	in.Observe()
+	<-in.Done
+
 	log.Printf(fmtstr, "gzipped", gzippedbuf.Bytes(), gzippedbuf.Len())
 
 	encryptedgzippedbuf = crypto.Encrypt(gzippedbuf.Bytes())

@@ -1,3 +1,6 @@
+![go report card](https://goreportcard.com/badge/github.com/coip/bitlogistics)
+
+
 # ethan@vanitas:/mnt/c/Users/ethan/go/src/bitlogistics$ `go run main.go`
 ```// len() ~ # of bytes```
 ## 2019/05/04 16:08:05 stage=**unencrypted** => len() == **687**;

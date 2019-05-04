@@ -45,10 +45,9 @@ func (j GzJob) Observe() {
 				if err != io.EOF {
 					log.Fatalf("error detected while observing compression: %+v", err)
 					return
-				} else {
-					log.Println("EOF reached!")
-					return
 				}
+				log.Println("EOF reached!")
+				return
 			case success = <-j.Done:
 				log.Printf("success: %t", success)
 			}

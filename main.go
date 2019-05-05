@@ -29,23 +29,24 @@ func main() {
 	// go func() {
 	// 	log.Println(http.ListenAndServe("localhost:6060", nil))
 	// }()
-	fmt.Printf(fmtstr, "unencrypted", time.Since(start), str, len(str))
+	// fmt.Printf(fmtstr, "unencrypted", time.Since(start), str, len(str))
 
 	in := compression.Gzip(&gzippedbuf, bytes.NewBuffer([]byte(str)))
 	in.Observe(os.Stdout)
 	<-in.Done
 
-	fmt.Printf(fmtstr, "gzipped", time.Since(start), gzippedbuf.Bytes(), gzippedbuf.Len())
+	// fmt.Printf(fmtstr, "gzipped", time.Since(start), gzippedbuf.Bytes(), gzippedbuf.Len())
 
 	encryptedgzippedbuf = crypto.Encrypt(gzippedbuf.Bytes())
-	fmt.Printf(fmtstr, "gzipped encrypted", time.Since(start), encryptedgzippedbuf.Bytes(), encryptedgzippedbuf.Len())
+	// fmt.Printf(fmtstr, "gzipped encrypted", time.Since(start), encryptedgzippedbuf.Bytes(), encryptedgzippedbuf.Len())
 
 	decryptedgzippedbuf = crypto.Decrypt(encryptedgzippedbuf.Bytes())
-	fmt.Printf(fmtstr, "gzipped decrypted", time.Since(start), encryptedgzippedbuf.Bytes(), encryptedgzippedbuf.Len())
+	// fmt.Printf(fmtstr, "gzipped decrypted", time.Since(start), encryptedgzippedbuf.Bytes(), encryptedgzippedbuf.Len())
 
 	out := compression.Gunzip(&dzippedbuf, decryptedgzippedbuf) //bytes.NewReader(gzippedbuf.Bytes())) //
 	out.Observe(os.Stdout)
 	<-out.Done
+	os.Stdout.Write([]byte(fmt.Sprintf("%s", time.Since(start))))
 	fmt.Printf(fmtstr, "dzipped decrypted", time.Since(start), dzippedbuf.Bytes(), dzippedbuf.Len())
 
 	// <-time.After(35 * time.Second)

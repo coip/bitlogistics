@@ -9,9 +9,9 @@ const (
 	buffersize = 1
 	chansize   = 1
 
-	rs = "[r:"
-	ws = "[w:"
-	be = "]"
+	rs = "r"
+	ws = "w"
+	be = ""
 
 	eof = "[EOF]"
 )
@@ -39,29 +39,21 @@ func (j GzJob) Observe(w io.Writer) {
 	var (
 		read, written int
 		err           error
-		success       bool
 	)
 	go func() {
 		for {
 			select {
 			case read = <-j.R:
-				// fmt.Printf("[r:%d]", read)
-				w.Write([]byte(rs + string(rune(read+48)) + be))
+				w.Write([]byte(rs + string(rune(read+48)))) //+ be))
 			case written = <-j.W:
-				// fmt.Printf("[w:%d]", written)
-				w.Write([]byte(ws + string(rune(written+48)) + be))
+				w.Write([]byte(ws + string(rune(written+48)))) //+ be))
 			case err = <-j.E:
 				if err != io.EOF {
-					// fmt.Printf("error detected while observing compression: %+v", err)
 					w.Write([]byte(err.Error()))
 					panic(err)
-					return
 				}
 				w.Write([]byte(eof))
-				// fmt.Println("[EOF]")
 				return
-			case success = <-j.Done:
-				// fmt.Printf("[success: %t]", success)
 			}
 		}
 	}()
@@ -102,8 +94,8 @@ func Gzip(w io.Writer, r io.Reader) GzJob {
 		}
 		gw.Flush()
 		gw.Close()
-		d <- io.EOF
 		c <- true
+		d <- io.EOF
 		close(a)
 		close(b)
 		close(c)
@@ -146,8 +138,8 @@ func Gunzip(w io.Writer, r io.Reader) GzJob {
 			}
 			b <- written
 		}
-		d <- io.EOF
 		c <- true
+		d <- io.EOF
 		gr.Close()
 		close(a)
 		close(b)

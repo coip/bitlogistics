@@ -1,14 +1,16 @@
 package compression
 
 import (
-	"bytes"
 	"compress/gzip"
+	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 )
 
-const buffersize = 8
+const (
+	buffersize = 4
+	chansize   = 4
+)
 
 type (
 	//Rchunks transports the size of bytes a Read() operation returns, from the consuming goroutine to the caller asynchronously.
@@ -63,8 +65,8 @@ func Gzip(w io.Writer, r io.Reader) GzJob {
 
 		buf = make([]byte, buffersize)
 
-		rq     = make(chan int, 1000)
-		wq     = make(chan int, 1000)
+		rq     = make(chan int, chansize)
+		wq     = make(chan int, chansize)
 		signal = make(chan bool)
 
 		errorQueue = make(chan error, 1)
@@ -79,39 +81,80 @@ func Gzip(w io.Writer, r io.Reader) GzJob {
 		for {
 			read, e = r.Read(buf)
 			if e == io.EOF {
-				c <- true
 				d <- io.EOF
-				gw.Close()
-				close(a)
-				close(b)
-				close(c)
-				close(d)
-				return
+				c <- true
+				break
 			}
 			a <- read
-			written, e = gw.Write(buf)
+			written, e = gw.Write(buf[:read])
+			gw.Flush()
 			if e != nil {
+				log.Println("gzip::gw.Write()")
 				d <- e
 			}
+			fmt.Printf("wrote %s\n", buf[:read])
 			b <- written
 		}
+		gw.Close()
+		close(a)
+		close(b)
+		close(c)
+		close(d)
+		return
 	}(rq, wq, signal, errorQueue)
 
 	return GzJob{rchunks(rq), wchunks(wq), completionSignal(signal), errorQueue}
 }
 
 //Gunzip the data stored in src into dst
-func Gunzip(w io.Writer, r *bytes.Buffer) error {
+func Gunzip(w io.Writer, r io.Reader) GzJob {
+	var (
+		read, written int
+		e             error
+
+		buf = make([]byte, buffersize)
+
+		rq     = make(chan int, chansize)
+		wq     = make(chan int, chansize)
+		signal = make(chan bool)
+
+		errorQueue = make(chan error, 1)
+	)
 	// Write gzipped data from src to dest
 	gr, err := gzip.NewReader(r)
 	if err != nil {
-		return err
+		panic(err)
 	}
-	defer gr.Close()
-	data, err := ioutil.ReadAll(gr)
-	if err != nil {
-		return err
-	}
-	w.Write(data)
-	return nil
+	go func(a chan int, b chan int, c chan bool, d chan error) {
+		for {
+			read, e = gr.Read(buf)
+			if e == io.EOF {
+				d <- io.EOF
+				c <- true
+				break
+			}
+			a <- read
+			written, e = w.Write(buf[:read])
+			if e != nil {
+				d <- e
+			}
+			fmt.Printf("wrote %s\n", buf[:read])
+			b <- written
+		}
+		gr.Close()
+		close(a)
+		close(b)
+		close(c)
+		close(d)
+		return
+	}(rq, wq, signal, errorQueue)
+
+	return GzJob{rchunks(rq), wchunks(wq), completionSignal(signal), errorQueue}
+	// defer gr.Close()
+	// data, err := ioutil.ReadAll(gr)
+	// if err != nil {
+	// 	return err
+	// }
+	// w.Write(data)
+	// return nil
 }

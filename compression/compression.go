@@ -87,7 +87,6 @@ func Gzip(w io.Writer, r io.Reader) GzJob {
 			}
 			a <- read
 			written, e = gw.Write(buf[:read])
-			gw.Flush()
 			if e != nil {
 				log.Println("gzip::gw.Write()")
 				d <- e
@@ -95,6 +94,7 @@ func Gzip(w io.Writer, r io.Reader) GzJob {
 			fmt.Printf("wrote %s\n", buf[:read])
 			b <- written
 		}
+		gw.Flush()
 		gw.Close()
 		close(a)
 		close(b)

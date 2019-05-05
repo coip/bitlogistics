@@ -2,9 +2,7 @@ package compression
 
 import (
 	"compress/gzip"
-	"fmt"
 	"io"
-	"log"
 )
 
 const (
@@ -17,6 +15,7 @@ type (
 	rchunks <-chan int
 	//Wchunks transports the size of bytes a Write() operation returns, from the consuming goroutine to the caller asynchronously.
 	wchunks <-chan int
+
 	//CompletionSignal receives true on complete. a false indicates an underlying irrecoverable failure has been detected for the processing.
 	completionSignal <-chan bool
 )
@@ -30,28 +29,40 @@ type GzJob struct {
 }
 
 //Observe enables observation of a GzJob once it has began.
-func (j GzJob) Observe() {
+func (j GzJob) Observe(w io.Writer) {
 	var (
 		read, written int
 		err           error
 		success       bool
 	)
 	go func() {
+		rs := "[r:"
+		ws := "[w:"
+		be := "]"
+		eof := []byte("[EOF]")
+
 		for {
 			select {
 			case read = <-j.R:
-				log.Printf("read %d bytes", read)
+				// fmt.Printf("[r:%d]", read)
+				w.Write([]byte(rs + string(rune(read+48)) + be))
 			case written = <-j.W:
-				log.Printf("written %d bytes", written)
+				// fmt.Printf("[w:%d]", written)
+				w.Write([]byte(ws + string(rune(written+48)) + be))
+
 			case err = <-j.E:
 				if err != io.EOF {
-					log.Fatalf("error detected while observing compression: %+v", err)
+					// fmt.Printf("error detected while observing compression: %+v", err)
+					w.Write([]byte(err.Error()))
+					panic(err)
 					return
 				}
-				log.Println("EOF reached!")
+				w.Write(eof)
+
+				// fmt.Println("[EOF]")
 				return
 			case success = <-j.Done:
-				log.Printf("success: %t", success)
+				// fmt.Printf("[success: %t]", success)
 			}
 		}
 	}()
@@ -88,10 +99,9 @@ func Gzip(w io.Writer, r io.Reader) GzJob {
 			a <- read
 			written, e = gw.Write(buf[:read])
 			if e != nil {
-				log.Println("gzip::gw.Write()")
 				d <- e
 			}
-			fmt.Printf("wrote %s\n", buf[:read])
+			// fmt.Printf("wrote %s\n", buf[:read])
 			b <- written
 		}
 		gw.Flush()
@@ -138,7 +148,7 @@ func Gunzip(w io.Writer, r io.Reader) GzJob {
 			if e != nil {
 				d <- e
 			}
-			fmt.Printf("wrote %s\n", buf[:read])
+			// fmt.Printf("wrote %s\n", buf[:read])
 			b <- written
 		}
 		gr.Close()
@@ -150,11 +160,5 @@ func Gunzip(w io.Writer, r io.Reader) GzJob {
 	}(rq, wq, signal, errorQueue)
 
 	return GzJob{rchunks(rq), wchunks(wq), completionSignal(signal), errorQueue}
-	// defer gr.Close()
-	// data, err := ioutil.ReadAll(gr)
-	// if err != nil {
-	// 	return err
-	// }
-	// w.Write(data)
-	// return nil
+
 }

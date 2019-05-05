@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	_ "net/http/pprof"
+	"os"
 	"runtime"
 	"time"
 )
@@ -31,7 +32,7 @@ func main() {
 	log.Printf(fmtstr, "unencrypted", str, len(str))
 
 	in := compression.Gzip(&gzippedbuf, bytes.NewBuffer([]byte(str)))
-	in.Observe()
+	in.Observe(os.Stdout)
 	<-in.Done
 
 	log.Printf(fmtstr, "gzipped", gzippedbuf.Bytes(), gzippedbuf.Len())
@@ -43,7 +44,7 @@ func main() {
 	// // log.Printf(fmtstr, "gzipped decrypted", encryptedgzippedbuf.Bytes(), encryptedgzippedbuf.Len())
 
 	out := compression.Gunzip(&dzippedbuf, bytes.NewReader(gzippedbuf.Bytes())) //decryptedgzippedbuf)
-	out.Observe()
+	out.Observe(os.Stdout)
 	<-out.Done
 	log.Printf(fmtstr, "dzipped decrypted", dzippedbuf.Bytes(), dzippedbuf.Len())
 

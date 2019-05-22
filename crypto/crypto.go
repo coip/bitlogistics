@@ -17,7 +17,7 @@ var c cipher.Block
 func init() {
 	var key = []byte(os.Getenv("KEY"))
 	if len(key) < 1 {
-		key = []byte(lennysecret)
+		key = []byte(Lennysecret)
 	}
 	var err error
 	c, err = aes.NewCipher(key)

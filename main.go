@@ -1,11 +1,12 @@
 package main
 
 import (
-	"bitlogistics/compression"
-	"bitlogistics/crypto"
 	"bytes"
 	"log"
 	"runtime"
+
+	"github.com/coip/bitlogistics/compression"
+	"github.com/coip/bitlogistics/crypto"
 )
 
 const fmtstr = "stage=%s => len(\n%q\n) == %d;\n"

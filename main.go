@@ -1,8 +1,8 @@
 package main
 
 import (
-	"bitlogistics/compression"
-	"bitlogistics/crypto"
+	"github.com/coip/bitlogistics/compression"
+	"github.com/coip/bitlogistics/crypto"
 	"bytes"
 	"fmt"
 	"time"

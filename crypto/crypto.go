@@ -10,7 +10,7 @@ import (
 	"os"
 )
 
-const lennysecret = "(° ͜ʖ °) ~ > (͡~ ͜ʖ ͡°)"
+const Lennysecret = "(° ͜ʖ °) ~ > (͡~ ͜ʖ ͡°)"
 
 var c cipher.Block
 
